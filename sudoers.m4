@@ -18,13 +18,14 @@ Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/b
 
 # User privilege specification
 root	ALL=(ALL:ALL) ALL
-__USERNAME__ ALL=(ALL) NOPASSWD: ALL
 
 # Members of the admin group may gain root privileges
 %admin ALL=(ALL) ALL
 
 # Allow members of group sudo to execute any command
 %sudo	ALL=(ALL:ALL) ALL
+
+__USERNAME__	ALL=(ALL) NOPASSWD: ALL
 
 # See sudoers(5) for more information on "#include" directives:
 
