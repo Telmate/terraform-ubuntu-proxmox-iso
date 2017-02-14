@@ -1,0 +1,4 @@
+work/*
+.DS_Store
+terraform
+terraform.pub

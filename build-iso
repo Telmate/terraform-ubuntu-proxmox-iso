@@ -1,0 +1,79 @@
+#!/bin/sh
+
+set -e
+
+. "$(dirname $0)/config.sh"
+
+ORIG="work/ubuntu-$VERSION-$DISTRO-$ARCH.iso"
+COPY="work/ubuntu-$VERSION-$DISTRO-$ARCH"
+ISO="work/$NICKNAME-ubuntu-$VERSION-$DISTRO-$ARCH.iso"
+MOUNT="work/mount"
+MACOS=$(which hdiutil)
+
+# Download the original ISO if it isn't present already.
+[ -f "$ORIG" ] || curl -L -o "$ORIG" \
+	-d distro="$DISTRO" \
+	-d release="$RELEASE" \
+	-d bits="$([ "$ARCH" = "i386" ] && echo 32 || echo 64)" \
+	"http://www.ubuntu.com/start-download"
+
+
+rm -rf "$MOUNT"
+mkdir "$MOUNT"
+
+echo Mounting ISO
+# Make a writable copy of the original ISO.
+if [ "$MACOS" ]; then
+	# os x
+	DEVNODE=$(sudo hdiutil attach -nomount "$ORIG" | head -1 | awk "{print \$1}")
+	sudo mount -t cd9660 "$DEVNODE" "$MOUNT"
+else
+	# linux
+	sudo mount -o loop "$ORIG" "$MOUNT"
+fi
+
+echo Syncing files from ISO
+rsync -a "$MOUNT/" "$COPY"
+
+echo Unmounting ISO
+sudo umount "$MOUNT"
+if [ "$MACOS" ]; then
+	sudo hdiutil eject "$DEVNODE"
+fi
+rm -rf "$MOUNT"
+chmod -R +w "$COPY"
+
+echo Injecting custom configs
+# Customize the writable copy.
+cp "isolinux.cfg" "$COPY/isolinux/"
+m4 \
+	-D __HOST__="$HOST" \
+	-D __DOMAIN__="$DOMAIN" \
+	-D __KERNEL__="linux-$([ "$ARCH" = "i386" ] \
+		&& echo generic-pae \
+		|| echo server
+	)" \
+	-D __ROOT_PASSWORD__="$ROOT_PASSWORD" \
+	-D __USERNAME__="$USERNAME" \
+	-D __PASSWORD__="$PASSWORD" \
+	"unattended.seed.m4" > "$COPY/preseed/unattended.seed"
+m4 \
+	-D __USERNAME__="$USERNAME" \
+	sudoers.m4 > "$COPY/sudoers"
+cp "$PUBLIC_KEY" "auto_resize_vda.sh" "$COPY/"
+m4 \
+	-D __USERNAME__="$USERNAME" \
+	-D __PUBLIC_KEY__="$PUBLIC_KEY" \
+	"late_command.sh.m4" > "$COPY/late_command.sh"
+
+echo Building a custom ISO
+# Build a custom ISO.
+mkisofs -r -V "Ubuntu $VERSION for Terraform" \
+	-cache-inodes -J -l -no-emul-boot \
+	-b isolinux/isolinux.bin \
+	-c isolinux/boot.cat \
+	-boot-load-size 4 -boot-info-table \
+	-o "$ISO" "$COPY"
+
+echo Built $ISO
+
