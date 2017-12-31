@@ -2,7 +2,7 @@
 
 set -e
 
-. "$(dirname $0)/config.sh"
+. "$(dirname "$0")/config.sh"
 
 ORIG="work/ubuntu-$VERSION-$DISTRO-$ARCH.iso"
 COPY="work/ubuntu-$VERSION-$DISTRO-$ARCH"
@@ -75,5 +75,4 @@ mkisofs -r -V "Ubuntu $VERSION for Terraform" \
 	-boot-load-size 4 -boot-info-table \
 	-o "$ISO" "$COPY"
 
-echo Built $ISO
-
+echo Built "$ISO"
