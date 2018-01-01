@@ -2,13 +2,13 @@
 
 set -e
 
-. "$(dirname $0)/config.sh"
+. "$(dirname "$0")/config.sh"
 
 ORIG="work/ubuntu-$VERSION-$DISTRO-$ARCH.iso"
 COPY="work/ubuntu-$VERSION-$DISTRO-$ARCH"
 ISO="work/$NICKNAME-ubuntu-$VERSION-$DISTRO-$ARCH.iso"
 MOUNT="work/mount"
-MACOS=$(which hdiutil)
+PLATFORM=$(uname)
 
 # Download the original ISO if it isn't present already.
 [ -f "$ORIG" ] || curl -L -o "$ORIG" \
@@ -23,7 +23,7 @@ mkdir "$MOUNT"
 
 echo Mounting ISO
 # Make a writable copy of the original ISO.
-if [ "$MACOS" ]; then
+if [ "$PLATFORM" = "Darwin" ]; then
 	# os x
 	DEVNODE=$(sudo hdiutil attach -nomount "$ORIG" | head -1 | awk "{print \$1}")
 	sudo mount -t cd9660 "$DEVNODE" "$MOUNT"
@@ -37,7 +37,7 @@ rsync -a "$MOUNT/" "$COPY"
 
 echo Unmounting ISO
 sudo umount "$MOUNT"
-if [ "$MACOS" ]; then
+if [ "$PLATFORM" = "Darwin" ]; then
 	sudo hdiutil eject "$DEVNODE"
 fi
 rm -rf "$MOUNT"
@@ -75,5 +75,4 @@ mkisofs -r -V "Ubuntu $VERSION for Terraform" \
 	-boot-load-size 4 -boot-info-table \
 	-o "$ISO" "$COPY"
 
-echo Built $ISO
-
+echo Built "$ISO"
