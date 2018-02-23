@@ -12,11 +12,7 @@ PLATFORM=$(uname)
 
 # Download the original ISO if it isn't present already.
 [ -f "$ORIG" ] || curl -L -o "$ORIG" \
-	-d distro="$DISTRO" \
-	-d release="$RELEASE" \
-	-d bits="$([ "$ARCH" = "i386" ] && echo 32 || echo 64)" \
-	"http://www.ubuntu.com/start-download"
-
+	"http://releases.ubuntu.com/$VERSION/ubuntu-$VERSION-$DISTRO-$ARCH.iso"
 
 rm -rf "$MOUNT"
 mkdir "$MOUNT"
